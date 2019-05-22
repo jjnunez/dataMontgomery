@@ -1,0 +1,256 @@
+---
+title: "MC_ENROLL"
+author: "Juan Nunez"
+date: "April 4, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+
+I set the working directory.
+
+```{r}
+setwd("C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone")
+```
+
+I open the packages.
+
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tidyr)
+```
+
+I open the dataset.
+
+```{r}
+mc_enroll <- read_csv("DATASETS\\Montgomery_College_Enrollment_Data.csv")
+```
+
+Now let's look at the top dataset
+
+
+```{r}
+dim(mc_enroll)
+head(mc_enroll)
+```
+
+
+Below is a code to see the entire dataset in terms of categories within variables.
+
+```{r}
+lapply(mc_enroll,table)
+```
+
+
+Below I add an underscore to the names of the columns.
+
+
+```{r}
+mc_enroll2 <- mc_enroll
+colnames(mc_enroll2) = gsub(" ", "_",colnames(mc_enroll2))
+```
+
+
+I create a dummy for whether they are continuing or new to MC
+
+```{r}
+mc_enroll2['MC_TRUE']= "Yes"
+mc_enroll2$MC_TRUE[mc_enroll2$Student_Type != "Continuing"] <- "No"
+table(mc_enroll2$MC_TRUE)
+```
+
+
+Take out the unknowns from Race Ethnicity and Gender
+
+```{r}
+mc_enroll2$HISPANIC <- mc_enroll2$Ethnicity
+mc_enroll2$HISPANIC[mc_enroll2$Ethnicity == "Unknown"] <- NA
+table(mc_enroll2$HISPANIC)
+```
+
+
+
+```{r}
+mc_enroll2$RACE <- mc_enroll2$Race
+mc_enroll2$RACE[mc_enroll2$Race == "Unknown"] <- NA
+table(mc_enroll2$RACE)
+```
+
+
+
+```{r}
+mc_enroll2['SEX']= "F"
+mc_enroll2$SEX[mc_enroll2$Gender == "Male"] <- "M"
+mc_enroll2$SEX[mc_enroll2$Gender == "Unknown"] <- NA
+table(mc_enroll2$SEX)
+```
+
+
+
+Below I create a 3 category variable for MC campus.
+
+```{r}
+
+mc_enroll2['MC_CAMPUS']= "Other"
+mc_enroll2$MC_CAMPUS[mc_enroll2$`Attending_Takoma_Park/SS` == "Yes"] <- "TP - SS"
+mc_enroll2$MC_CAMPUS[mc_enroll2$Attending_Rockville  == "Yes"] <- "RV"
+mc_enroll2$MC_CAMPUS[mc_enroll2$Attending_Germantown  == "Yes"] <- "GT"
+table(mc_enroll2$MC_CAMPUS)
+
+
+```
+
+
+Below I make unknown NA in the AGE variable
+
+```{r}
+mc_enroll2$AGE_GROUP_fixed <- mc_enroll2$Age_Group
+mc_enroll2$AGE_GROUP_fixed[mc_enroll2$AGE_GROUP_fixed == "Unknown"] <- NA
+table(mc_enroll2$AGE_GROUP_fixed)
+```
+
+
+
+Below I create a dummy for MCPS.
+
+```{r}
+mc_enroll2['MCPS_DUM']= "Other"
+mc_enroll2$MCPS_DUM[mc_enroll2$HS_Category == "MCPS"] <- "MCPS"
+table(mc_enroll2$MCPS_DUM)
+```
+
+
+Below I create a dummy for State
+
+```{r}
+mc_enroll2['STATE_DUM']= "Other"
+mc_enroll2$STATE_DUM[mc_enroll2$State == "MD"] <- "MD"
+table(mc_enroll2$STATE_DUM)
+```
+
+
+I fix the zip codes.
+
+```{r}
+class(mc_enroll2$ZIP)
+mc_enroll2$ZIP <- as.character(mc_enroll2$ZIP)
+class(mc_enroll2$ZIP)
+
+```
+
+```{r}
+table(mc_enroll2$ZIP)
+```
+
+```{r}
+mc_enroll2$ZIP[mc_enroll2$ZIP == "926"] <- "00926"
+mc_enroll2$ZIP[mc_enroll2$ZIP == "2050"] <- "02050"
+mc_enroll2$ZIP[mc_enroll2$ZIP == "6830"] <- "06830"
+mc_enroll2$ZIP[mc_enroll2$ZIP == "7102"] <- "07102"
+table(mc_enroll2$ZIP)
+
+```
+
+
+Clean County in MD.
+
+
+```{r}
+mc_enroll2['MD_COUNTY']= "Other"
+mc_enroll2$MD_COUNTY[mc_enroll2$County_in_MD == "Montgomery"] <- "Montgomery"
+head(mc_enroll2)
+table(mc_enroll2$MD_COUNTY)
+```
+
+
+Below I save teh dataset to csv.
+
+```{r}
+write.csv(mc_enroll2, file = "mc_enroll2.csv",row.names=FALSE, na="")
+```
+
+```{r}
+table(mc_enroll2$Student_Type)
+```
+
+
+
+
+```{r}
+table(mc_enroll2$Student_Status)
+```
+
+
+```{r}
+table(mc_enroll2$RACE)
+```
+
+```{r}
+table(mc_enroll2$Race)
+```
+
+```{r}
+
+mc_enroll2$RACE <- mc_enroll2$Race
+
+mc_enroll2$RACE[mc_enroll2$RACE == "Multi-Race"] <- "Other"
+mc_enroll2$RACE[mc_enroll2$RACE == "Native American"] <- "Other"
+mc_enroll2$RACE[mc_enroll2$RACE == "Pacific Islander"] <- "Other"
+mc_enroll2$RACE[mc_enroll2$RACE == "Unknown"] <- "Other"
+
+table(mc_enroll2$RACE)
+
+```
+
+```{r}
+table(mc_enroll2$AGE_GROUP_fixed)
+```
+
+```{r}
+mc_enroll2$RACE_n <- factor(mc_enroll2$RACE, levels = c("White", "Black", "Hispanic", "Asian", "Other"))
+table(mc_enroll2$RACE_n)
+table(mc_enroll2$RACE)
+```
+
+```{r}
+table(mc_enroll2$MC_CAMPUS)
+```
+
+```{r}
+mc_enroll2 %>% filter(!is.na(AGE_GROUP_fixed)) %>%
+ggplot(aes(x = AGE_GROUP_fixed, fill = MC_CAMPUS)) +
+geom_bar() +
+labs(title = "Enrollment by Age", x= "Age Group", y = "Enrollment") +
+guides(fill=guide_legend(title = "Campus")) +
+scale_fill_discrete(labels = c("Germantown", "Rockville", "Takoma Park"))
+
+```
+
+```{r}
+
+mc_enroll2 %>%  filter(!is.na(MC_CAMPUS)) %>%
+ggplot() +
+aes(x = MC_CAMPUS , fill = Student_Status) +
+geom_bar(position = 'dodge') +
+scale_fill_discrete(labels = c("Full-Time", "Part-Time")) +
+labs(fill = "Status", y = "Enrollment", x ="Campus", title = "Enrollment by Campus and Status") +
+scale_x_discrete(labels = c("Germantown" , "Rockville", "Takoma Park"))
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+

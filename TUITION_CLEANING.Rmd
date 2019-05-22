@@ -1,0 +1,212 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+
+Set wokring directory.
+
+```{r}
+
+setwd("C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone")
+```
+
+Open dataset.
+
+
+```{r}
+library(tidyverse)
+TA_df <- read_csv("DATASETS\\Tuition_Assistance.csv")
+```
+
+Look at the top of the dataset.
+
+```{r}
+dim(TA_df)
+```
+
+```{r}
+head(TA_df)
+```
+
+Below we see which departments are recipients of tuition assistance.
+
+```{r}
+library("Hmisc")
+unique(TA_df$Department)
+table(TA_df$Department)
+```
+
+
+I create a dummy variable for police.
+
+```{r}
+TA_df$Police <- ifelse(TA_df$Department == "Police", 1, 0)
+head(TA_df)
+```
+
+Let's see which degrees are pursued.
+
+```{r}
+table(TA_df$Degree)
+```
+
+I fix the degree variable to make it more intelligible.
+
+```{r}
+TA_df$Degree_s[TA_df$Degree == "Ph.D. (DDE)"] <- "Other"
+TA_df$Degree_s[TA_df$Degree == "Other"] <- "Other"
+TA_df$Degree_s[TA_df$Degree == "Juris Doctor"] <- "Other"
+TA_df$Degree_s[TA_df$Degree == "Ph.D. (DCS)"] <- "Other"
+TA_df$Degree_s[TA_df$Degree == "AA"] <- "AA"
+TA_df$Degree_s[TA_df$Degree == "Masters (MA/MS/MPH/etc.)"] <- "MA"
+TA_df$Degree_s[TA_df$Degree == "Bachelors (BA/BS)"] <- "BA"
+TA_df$Degree_s[TA_df$Degree == "Certificate"] <- "Certificate"
+TA_df$Degree_s[TA_df$Degree == "Non-Degree"] <- "Non-Degree"
+
+table(TA_df$Degree_s)
+head(TA_df)
+
+533 + 994 + 333 + 606 + 391 + 236
+
+533 + 994 + 333 + 606 + 391 + 160 + 30 + 26 + 20
+```
+
+
+```{r}
+#TA_df <- mutate(TA_df, Police_cat = as.factor(TA_df$Police))
+#head(TA_df)
+#table(TA_df$Police_cat)
+
+#png(filename="C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone\\midterm_graph.png")
+
+#ggplot(TA_df) +
+ # aes(x = Degree_s, fill = Police_cat) +
+  #geom_bar() +
+  #guides(fill=guide_legend(title="Recipient", labels = "Other", "Police"))
+
+
+#ggplot(data = TA_df , aes(x=Degree_s,  fill=Police_cat)) + 
+ # geom_bar() +
+  #labs(title="Tuition Assistance Recipients Counts\n", x="Degree", y="Count") + 
+  #guides(fill=guide_legend(title="Recipient")) +
+  #scale_fill_discrete(labels = c("Other", "Police"))
+
+#dev.off()
+
+##factor(XPRESSCAT, labels = c("Completely free", "Very free", "Moderately free", "Slightly free", "Not free at all")))
+
+```
+
+
+I fix the department variable.
+
+```{r}
+table(TA_df$Department)
+TA_df$dep_n[TA_df$Department == "Police"] <- "Police"
+TA_df$dep_n[TA_df$Department == "Fire/Rescue Services"] <- "Fire & Rescue"
+TA_df$dep_n[TA_df$Department == "Health & Human Services"] <- "HHS"
+TA_df$dep_n[TA_df$Department != "Police" & TA_df$Department != "Fire/Rescue Services" & TA_df$Department != "Health & Human Services"] <- "Other"
+head(TA_df)
+```
+
+I create a bar chart with the department and the degree they pursue.
+
+```{r}
+
+
+
+TA_df <- mutate(TA_df, deps = as.factor(TA_df$dep_n))
+head(TA_df)
+table(TA_df$deps)
+
+#png(filename="C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone\\midterm_graph.png")
+
+
+ggplot(data = TA_df , aes(x=Degree_s,  fill=deps)) + 
+  geom_bar() +
+  labs(title="Tuition Assistance Recipients Counts\n", x="Degree", y="Count") + 
+  guides(fill=guide_legend(title="Recipient")) +
+  scale_fill_discrete(labels = c("Police", "Fire and Rescue", "H&H Services", "Other"))
+
+#dev.off()
+```
+
+
+```{r}
+write.csv(TA_df, file = "TA_df.csv",row.names=FALSE, na="")
+```
+
+
+
+```{r}
+table(TA_df$dep_n)
+
+
+```
+
+```{r}
+TA_df$dep_n <- factor(TA_df$dep_n, levels = c("Fire & Rescue", "HHS", "Police", "Other"))
+table(TA_df$dep_n)
+table(TA_df$Department)
+```
+
+```{r}
+library(psych)
+describe(TA_df$Cost)
+```
+
+```{r}
+class(TA_df$Cost)
+```
+
+
+```{r}
+table(TA_df$Degree_s)
+```
+
+```{r}
+TA_df$Degree_s <- factor(TA_df$Degree_s, levels = c("AA", "BA", "MA", "Certificate","Non-Degree", "Other"))
+table(TA_df$Degree_s)
+table(TA_df$Degree)
+```
+
+```{r}
+table(TA_df$dep_n)
+```
+
+```{r}
+
+```
+
+
+
+
+```{r}
+#filter(!is.na(AGE_GROUP_fixed)) %>%
+options(scipen=10000)
+TA_df %>% 
+ggplot(aes(y = Cost, x = as.factor(dep_n))) +
+geom_bar(stat="identity") +
+labs(title = "Cost by Department", x= "Department", y = "Cost") 
+```
+
+```{r}
+options(scipen=10000)
+TA_df %>% 
+ggplot(aes(y = Cost, x = as.factor(Degree_s))) +
+geom_bar(stat="identity") +
+labs(title = "Cost by Degree", x= "Degree", y = "Cost") 
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+

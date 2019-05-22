@@ -1,0 +1,383 @@
+---
+title: "Bias Incidents"
+author: "Juan Nunez"
+date: "April, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Set working directory.
+
+```{r}
+setwd("C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone")
+```
+
+Open packages.
+
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tidyr)
+```
+
+Open the data.
+
+```{r}
+bias <- read_csv("DATASETS\\MCPD_Bias_Incidents.csv")
+```
+
+Look at the data.
+
+```{r}
+dim(bias)
+```
+
+
+```{r}
+head(bias)
+```
+
+Add underscores to the names of the columns.
+
+```{r}
+colnames(bias) = gsub(" ", "_",colnames(bias))
+```
+
+Make a copy of the data.
+
+```{r}
+bias2 <- bias
+head(bias2)
+```
+
+Change the name and class of the date variable.
+
+```{r}
+colnames(bias2)[colnames(bias2)=="Incident_Date"] <- "Date"
+```
+
+
+
+```{r}
+bias2$Date <- as.Date(bias2$Date, "%m/%d/%Y")
+class(bias2$Date)
+```
+
+Fix the district numbers.
+
+```{r}
+table(bias2$District)
+```
+
+
+```{r}
+bias2$District_n <- bias2$District
+bias2$District_n[bias2$District== "GCPD"] <- "Other"
+bias2$District_n[bias2$District== "RCPD"] <- "Other"
+bias2$District_n[bias2$District== "TPPD"] <- "Other"
+
+```
+
+
+```{r}
+table(bias2$District_n)
+```
+
+Fix the bias codes.
+
+```{r}
+table(bias$Bias_Code)
+```
+
+
+
+```{r}
+bias2$bias_n <- bias2$Bias_Code
+bias2$bias_n[bias2$bias_n== "12- Anti-Black"] <- "Anti-black"
+bias2$bias_n[bias2$bias_n== "12-Anti-Black"] <- "Anti-black"
+bias2$bias_n[bias2$bias_n== "12 - Anti-Black"] <- "Anti-black"
+bias2$bias_n[bias2$bias_n== "11 - Anti-white"] <- "Anti-white"
+bias2$bias_n[bias2$bias_n== "15 - Anti-Multi-Racial"] <- "Anti-multi-racial"
+bias2$bias_n[bias2$bias_n== "15 - Anti-multi racial"] <- "Anti-multi-racial"
+bias2$bias_n[bias2$bias_n== "14 - Anti-Asian"] <- "Anti-asian"
+bias2$bias_n[bias2$bias_n== "21 - Anti-Jewish"] <- "Anti-jewish"
+bias2$bias_n[bias2$bias_n== "22 - Anti-Catholic"] <- "Anti-catholic"
+bias2$bias_n[bias2$bias_n== "22 - Anti-Jewish"] <- "Anti-jewish"
+bias2$bias_n[bias2$bias_n== "24 - Anti-Islamic"] <- "Anti-islamic"
+bias2$bias_n[bias2$bias_n== "25 - Anti-Other Religion"] <- "Anti-other-religion"
+bias2$bias_n[bias2$bias_n== "26 - Anti-Multi religious group"] <- "Anti-multi-religious-group"
+bias2$bias_n[bias2$bias_n== "31 - Anti-Arab"] <- "Anti-arab"
+bias2$bias_n[bias2$bias_n== "32 - Anti-Hispanic"] <- "Anti-hispanic"
+bias2$bias_n[bias2$bias_n== "33- Anti-other Ethnicity"] <- "Anti-other-ethnicity"
+bias2$bias_n[bias2$bias_n== "33 - Anti-Other Ethnicity"] <- "Anti-other-ethnicity"
+bias2$bias_n[bias2$bias_n== "43 - Anti-Homosexual"] <- "Anti-homosexual"
+bias2$bias_n[bias2$bias_n== "71 - Anti-Transgender"] <- "Anti-transgender"
+bias2$bias_n[bias2$bias_n== "72 - Anti Gender Non-conforming"] <- "Anti-gender-non-conforming"
+table(bias2$bias_n)
+
+
+
+```
+
+Create a shorter version of the bias categories.
+
+
+```{r}
+
+bias2$bias_cat <- bias2$bias_n
+bias2$bias_cat[bias2$bias_cat== "Anti-arab"] <- "Anti-other"
+bias2$bias_cat[bias2$bias_cat== "Anti-asian"] <- "Anti-other"
+bias2$bias_cat[bias2$bias_cat== "Anti-catholic"] <- "Anti-other"
+bias2$bias_cat[bias2$bias_cat== "Anti-gender-non-conforming"] <- "Anti-LGBTQ"
+bias2$bias_cat[bias2$bias_cat== "Anti-homosexual"] <- "Anti-LGBTQ"
+bias2$bias_cat[bias2$bias_cat== "Anti-multi-religious-group"] <- "Anti-other"
+bias2$bias_cat[bias2$bias_cat== "Anti-other-ethnicity"] <- "Anti-other"
+bias2$bias_cat[bias2$bias_cat== "Anti-other-religion"] <- "Anti-other"
+bias2$bias_cat[bias2$bias_cat== "Anti-transgender"] <- "Anti-LGBTQ"
+
+table(bias2$bias_cat)
+
+
+
+```
+
+```{r}
+class(bias2$bias_cat)
+```
+
+Clean the bias variable.
+
+```{r}
+
+bias2$Bias_n <- bias2$Bias
+bias2$Bias_n[bias2$Bias_n== "Miscellaneous"] <- "Other"
+bias2$Bias_n[bias2$Bias_n== "Harassing Communication"] <- "Other"
+bias2$Bias_n[bias2$Bias_n== "Flyer left behind"] <- "Other"
+bias2$Bias_n[bias2$Bias_n== "Assault (Aggravated)"] <- "Assault"
+bias2$Bias_n[bias2$Bias_n== "Assault (intimidation)"] <- "Assault"
+bias2$Bias_n[bias2$Bias_n== "Assault (Intimidation)"] <- "Assault"
+bias2$Bias_n[bias2$Bias_n== "Assault (physical)"] <- "Assault"
+bias2$Bias_n[bias2$Bias_n== "Assault (simple)"] <- "Assault"
+bias2$Bias_n[bias2$Bias_n== "Damage property"] <- "Vandalism"
+bias2$Bias_n[bias2$Bias_n== "Damage property"] <- "Vandalism"
+bias2$Bias_n[bias2$Bias_n== "Verbal Intimidation"] <- "Intimidation"
+bias2$Bias_n[bias2$Bias_n== "Written Intimidation"] <- "Intimidation"
+
+table(bias2$Bias_n)
+
+
+```
+
+
+```{r}
+bias2$biascat_n <- bias2$Bias_n
+bias2$biascat_n <- factor(bias2$biascat_n, levels = c("Assault", "Intimidation", "Vandalism", "Other"))
+table(bias2$biascat_n)
+table(bias2$Bias_n)
+```
+
+
+```{r}
+
+bias2 %>% 
+ggplot(aes(x = bias_cat, fill = biascat_n)) +
+geom_bar() +
+labs(title = "Bias by Incident Type", x= "Bias", y = "# of Incidents") +
+guides(fill=guide_legend(title = "Incident type")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r}
+table(bias$Bias)
+```
+
+
+```{r}
+table(bias2$Status)
+```
+
+
+```{r}
+table(bias2$`#_of_Victims`)
+```
+
+Change the victim column name.
+
+```{r}
+colnames(bias2)[colnames(bias2)=="#_of_Victims"] <- "Victim_Num"
+```
+
+```{r}
+table(bias2$Victim_Num)
+```
+
+See in which incidents there were 0 victims.
+
+```{r}
+bias2[which(bias2$Victim_Num == 0), ]
+```
+
+Create a dummy variable for victim type.
+
+```{r}
+table(bias2$Victim_Type)
+```
+
+
+```{r}
+bias2$Victim_DUM <- bias2$Victim_Type
+bias2$Victim_DUM[bias2$Victim_DUM== "Individual"] <- "Individual(s)"
+bias2$Victim_DUM <- recode(bias2$Victim_DUM, "Individual(s)" = "Person(s)", .default = "Other")
+table(bias2$Victim_DUM)
+
+```
+
+Change the column name for number of suspects and age of suspects.
+
+```{r}
+colnames(bias2)[colnames(bias2)=="#_of_Suspects"] <- "Suspect_Num"
+
+```
+
+```{r}
+table(bias2$Suspect_Num)
+```
+
+
+```{r}
+colnames(bias2)[colnames(bias2)=="#_Suspects_less_than_18_years_old"] <- "Sus_18orless"
+colnames(bias2)[colnames(bias2)=="#_Suspects_18-35_years_old"] <- "Sus_18to25"
+colnames(bias2)[colnames(bias2)=="#_Suspects_46-55_years_old"] <- "Sus_46to55"
+colnames(bias2)[colnames(bias2)=="#_Suspects_>55_years_old"] <- "Sus_55plus"
+head(bias2)
+
+```
+
+
+```{r}
+dim(bias2)
+table(bias2$Unknown)
+```
+
+Create a dummy variable for the unknown variable.
+
+```{r}
+bias2$Unknown[is.na(bias2$Unknown)] <- "No"
+bias2$Unknown <- recode(bias2$Unknown, "X" = "Yes")
+table(bias2$Unknown)
+```
+
+The crosstabs function is used to gain knowledge about how the variable relate to each other.
+
+```{r}
+# Load function
+source("http://pcwww.liv.ac.uk/~william/R/crosstab.r")
+```
+
+
+
+```{r}
+head(bias2)
+```
+
+
+
+```{r}
+crosstab(bias2, row.vars = "bias_cat", col.vars = "Bias_n", type = "f")
+crosstab(bias2, row.vars = "bias_cat", col.vars = "Bias_n", type = "c")
+crosstab(bias2, row.vars = "bias_cat", col.vars = "Bias_n", type = "r")
+```
+
+We see above that the majority of offenses are vandalism and intimidation.  We also see that the largest percentage of assaults happen to LGBT. We also see that jewish risk vandalism more.  We see there were no assault on jews.  Below we use a facet graph to see these associations.
+
+```{r}
+bias2 %>% filter(Victim_DUM == "Person(s)") %>%
+ggplot(aes(x = bias_cat, fill = biascat_n)) +
+geom_bar() +
+labs(title = "Bias by Incident Type (People)", x= "Bias", y = "# of Incidents") +
+guides(fill=guide_legend(title = "Incident type")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r}
+library(ggplot2)
+
+ggplot(bias2, aes(bias_cat)) + geom_bar()
+
+ggplot(bias2, aes(bias_cat)) + geom_bar() +
+  facet_wrap(~ Bias_n, ncol = 1) +
+  theme(axis.text.x=element_text(angle = -45, hjust = 0)) +
+  theme(axis.title.x = element_blank())
+```
+
+Just because a group suffers from bias doesn't mean they are the most vulnerable as the graphs above suggest.
+
+```{r}
+table(bias2$District_n)
+
+```
+
+Create a variable for city.
+
+```{r}
+bias2$City[bias2$District_n== "1D"] <- "Rockville"
+bias2$City[bias2$District_n== "2D"] <- "Bethesda"
+bias2$City[bias2$District_n== "3D"] <- "Silver Spring"
+bias2$City[bias2$District_n== "4D"] <- "Wheaton"
+bias2$City[bias2$District_n== "5D"] <- "Germantown"
+bias2$City[bias2$District_n== "6D"] <- "Gaithersburg / Montgomery Village"
+bias2$City[bias2$District_n== "Other"] <- "Other"
+table(bias2$City)
+```
+
+
+Below we use the crosstabs function to see which biases happen in which cities.
+
+```{r}
+crosstab(bias2, row.vars = "bias_cat", col.vars = "City", type = "f")
+crosstab(bias2, row.vars = "bias_cat", col.vars = "City", type = "c")
+crosstab(bias2, row.vars = "bias_cat", col.vars = "City", type = "r")
+
+
+```
+
+There is a lot of bias against hispanics in wheaton.  We see Bethesda has high percentages in each category except against hispanic and islamic.  It's strange that Bethesda has such a high anti jewish and anti black bias.  Rockville also saw a lot of bias towards jewish. Itls also interesting that Bethesda has the highest number of incidents but not the highest number of crimes.
+
+Below is an interesting analysis of the types of victims compared to the biasa category.
+
+
+
+
+```{r}
+crosstab(bias2, row.vars = "bias_cat", col.vars = "Victim_DUM", type = "f")
+crosstab(bias2, row.vars = "bias_cat", col.vars = "Victim_DUM", type = "c")
+crosstab(bias2, row.vars = "bias_cat", col.vars = "Victim_DUM", type = "r")
+```
+
+We see above that whites, hispanics, islamics, and the lgbtq community suffer personally at a higher rate.  We see that almost half of the non-person bias is directed towards the jewish category.  
+
+
+```{r}
+write.csv(bias2, "bias2.csv")
+```
+
+
+
+```{r}
+
+```
+
+Data missing anti rich/anti poor.
+
+
+
+
+

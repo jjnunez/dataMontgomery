@@ -1,0 +1,107 @@
+---
+title: "NOISE"
+author: "Juan Nunez"
+date: "April 4, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+Set working directory.
+
+```{r}
+setwd("C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone")
+```
+
+Open packages.
+
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tidyr)
+```
+
+Open dataset.
+
+```{r}
+noise <- read_csv("DATASETS\\Noise_Complaints.csv")
+```
+
+Now let's look at the top dataset
+
+```{r}
+dim(noise)
+head(noise)
+```
+
+Add underscores to column names.
+
+```{r}
+colnames(noise) = gsub(" ", "_",colnames(noise))
+```
+
+Let's see if the zip codes need zeros.
+
+```{r}
+table(noise$Address_Zip_Code)
+```
+
+
+Create a date variable.
+
+```{r}
+noise$Date <- as.Date(noise$Case_Open_Date , "%m/%d/%Y")
+class(noise$Date)
+```
+
+Let's see the Case Sub_Type variable in detail.
+
+```{r}
+table(noise$`Case_Sub-Type`)
+```
+
+
+Create a three category variable for Case Type.
+
+```{r}
+noise['NOISE_TYPE']= "Industrial"
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Residential   Construction/repair/demolition"] <- "Residential"
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Residential   Mechanical"] <- "Residential"
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Residential House/yard"] <- "Residential"
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Residential   El  Amplification Equip"] <- "Residential"
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Residential   Motor Vehicle Noise"] <- "Residential"
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Residential Muti Tenant Dwelling"] <- "Residential"
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Waiver Request"] <- "Other"
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Information Request"] <- "Other" 
+noise$NOISE_TYPE[noise$`Case_Sub-Type` == "Project   Community Noise Survey"] <- "Other" 
+
+
+table(noise$NOISE_TYPE)
+
+```
+
+Save data as csv.
+
+```{r}
+write.csv(noise, file = "noise.csv",row.names=FALSE, na="")
+```
+
+
+```{r}
+#filter(!is.na(AGE_GROUP_fixed)) %>%
+noise %>% filter(NOISE_TYPE != "Other") %>% filter(Case_Year > 1995 & Case_Year < 2019) %>%
+ggplot(aes(x = Case_Year, fill = NOISE_TYPE)) +
+geom_bar(position = 'dodge') +
+labs(title = "Noise Type by Year", x= "Year", y = "Complaints") +
+guides(fill=guide_legend(title = "Noise Type"))
+
+```
+
+```{r}
+table(noise$Case_Year)
+```
+
+
+
+

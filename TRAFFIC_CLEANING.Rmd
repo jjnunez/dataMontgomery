@@ -1,0 +1,502 @@
+---
+title: "Capstone_analyses"
+author: "Juan Nunez"
+date: "April 1, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+Set working directory.
+
+```{r}
+setwd("C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone")
+```
+
+Open packages
+
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tidyr)
+```
+
+Open data:
+
+```{r}
+#traffic <- read_csv("DATASETS\\Traffic_Violations.csv")
+##save(traffic, file = "traffic.Rda")
+load(file = "traffic.rda")
+```
+
+Look at the top of the data.
+
+```{r}
+head(traffic)
+
+```
+
+
+Dimensions of the traffic dataset.
+
+```{r}
+dim(traffic)
+
+```
+
+
+Below I make a copy of traffic.
+
+```{r}
+traffic2 <- traffic
+
+```
+
+Now I remove district from the Subagency variable.
+
+```{r}
+traffic2$SubAgency <-gsub(" district","",traffic2$SubAgency)
+```
+
+Let's see if this worked.
+
+```{r}
+head(traffic2)
+```
+
+Now that the word district was removed, I'll separate SubAgency into two columns - one containing the district number and the other containing the city.  First I want to see how many SubAgencies there are.
+
+```{r}
+table(traffic2$SubAgency)
+```
+
+Now let's change the names of these subagencies.  First I check in the crime dataset to make sure we have the same names.
+
+```{r}
+#crime <- read_csv("DATASETS\\Crime.csv")
+```
+
+
+```{r}
+#table(crime$`Police District Number`)
+```
+   1D    2D    3D    4D    5D    6D OTHER  TPPD 
+10448  9974 15915 14788  9905 12413    18  1771 
+
+I think we will go with the crime dataset names.  I set the Headquarters and Special Operations category to other.
+
+```{r}
+
+traffic2$SubAgency_n[traffic2$SubAgency== "1st, Rockville"] <- "1D"
+traffic2$SubAgency_n[traffic2$SubAgency== "2nd, Bethesda"] <- "2D"
+traffic2$SubAgency_n[traffic2$SubAgency== "3rd, Silver Spring"] <- "3D"
+traffic2$SubAgency_n[traffic2$SubAgency== "4th, Wheaton"] <- "4D"
+traffic2$SubAgency_n[traffic2$SubAgency== "5th, Germantown"] <- "5D"
+traffic2$SubAgency_n[traffic2$SubAgency== "6th, Gaithersburg / Montgomery Village"] <- "6D"
+traffic2$SubAgency_n[traffic2$SubAgency== "Headquarters and Special Operations"] <- "Other"
+```
+
+Let's see if this did the trick.
+
+```{r}
+head(traffic2)
+```
+
+Let's look at the categories
+
+```{r}
+table(traffic2$SubAgency)
+table(traffic2$SubAgency_n)
+```
+
+Looks good.  Now let's see if the class for Date of Stop is correct.
+
+```{r}
+class(traffic2$`Date Of Stop`)
+```
+
+We need to make sure R knows this is a date.
+
+```{r}
+traffic2$Date <- as.Date(traffic2$`Date Of Stop`, "%m/%d/%Y")
+```
+
+Let's see if it worked
+
+```{r}
+class(traffic2$Date)
+```
+
+What about the time of stop?
+
+```{r}
+class(traffic2$`Time Of Stop`)
+```
+
+R does understand that.  Now let's figure the location variable.  First I create separate columns for year month and day
+
+I may need lubridate so I load it.
+
+```{r}
+library(lubridate)
+```
+
+Now I create a separate variable for month, day, and year
+
+```{r}
+traffic3 <- traffic2
+```
+
+
+```{r}
+#Add additional columns for the year, month, and day of the violation
+traffic2$year <- as.numeric(format(traffic2$Date,'%Y'))
+traffic2$month <- as.numeric(format(traffic2$Date,'%m'))
+traffic2$day <- as.numeric(format(traffic2$Date,'%d'))
+
+```
+
+
+```{r}
+head(traffic2)
+```
+
+I add the underscores to the columns of the traffic data.
+
+```{r}
+colnames(traffic3) = gsub(" ", "_",colnames(traffic3))
+```
+
+```{r}
+head(traffic3)
+```
+
+
+Ok, Now to the visualization.
+
+```{r}
+#these are the furtest latitude/longitude for Montgomery County in any given direction, based on Google Maps
+north <- 39.36
+south <- 38.92
+west <- -77.55
+east <- -76.88
+ggplot(data = traffic2%>%filter(Longitude>west,Longitude<east,Latitude<north,Latitude>south)) + geom_point(aes(x = Longitude, y = Latitude),alpha = .2, size = .1)+ggtitle("Violations Map")
+
+```
+
+Back to traffic2.  Adding the underscores to the traffic column names.
+
+```{r}
+colnames(traffic2) = gsub(" ", "_",colnames(traffic2))
+```
+
+Let's see what traffic2 looks like.
+
+```{r}
+head(traffic2)
+```
+
+Finally, let's see if the Make and Color variables are clean.
+
+```{r}
+table(traffic2$Make)
+```
+
+The make variable is horible.  Won't be able to use it.  Now let's see color.
+
+```{r}
+table(traffic2$Color)
+```
+
+This one is more manegeable.
+
+```{r}
+traffic2$Color_New <- traffic2$Color
+traffic2$Color_New[traffic2$Color_New== "BLUE, DARK"] <- "BLUE"
+traffic2$Color_New[traffic2$Color_New== "BLUE, LIGHT"] <- "BLUE"
+traffic2$Color_New[traffic2$Color_New== "GREEN, DK"] <- "GREEN"
+traffic2$Color_New[traffic2$Color_New== "GREEN, LGT"] <- "GREEN"
+traffic2$Color_New[traffic2$Color_New== "GREEN, LGT"] <- "GREEN"
+traffic2$Color_New[traffic2$Color_New== "N/A"] <- "OTHER"
+
+```
+
+The renaming seems to have worked as shwon below.
+
+```{r}
+table(traffic2$Color_New)
+```
+
+```{r}
+head(traffic2)
+```
+
+Adding a constant column to identify the dataset in case of a merge.
+
+```{r}
+traffic2['DATNUM']=1
+```
+
+Below I write the dataset to a csv format.
+
+```{r}
+head(traffic2)
+write.csv(traffic2, "traffic2.csv")
+```
+
+traffic3 is the same as traffic 2 except that it includes a constant to identify the traffic violations as 1.
+
+```{r}
+traffic3['DATNUM']=1
+traffic3['V_type']=1
+traffic4 <- traffic3
+
+```
+
+traffic4 is a subset of the traffic3 with only select variables.
+
+```{r}
+traffic4 <- traffic4 %>%
+  select(Date, DATNUM, Latitude, Longitude, SubAgency_n, V_type)
+```
+
+
+
+```{r}
+table(traffic2$SubAgency_n)
+```
+
+```{r}
+table(traffic2$SubAgency)
+```
+
+
+```{r}
+table(traffic2$Race)
+```
+
+
+```{r}
+traffic2$RACE <- traffic2$Race
+traffic2$RACE[traffic2$Race== "NATIVE AMERICAN"] <- "OTHER"
+table(traffic2$RACE)
+```
+
+
+```{r}
+head(traffic2)
+```
+
+```{r}
+# Load function
+source("http://pcwww.liv.ac.uk/~william/R/crosstab.r")
+```
+
+
+```{r}
+table(traffic2$Contributed_To_Accident)
+```
+
+```{r}
+library(ggthemes)
+```
+
+
+```{r}
+traffic2$Gender_n <- traffic2$Gender
+traffic2$Gender_n[traffic2$Gender_n == "U"] <- NA
+table(traffic2$Gender_n)
+```
+
+```{r}
+trafficS <- traffic2
+```
+
+
+```{r}
+traffic2$RACE_n <- factor(traffic2$RACE, levels = c("WHITE", "BLACK", "HISPANIC", "ASIAN", "OTHER"))
+table(traffic2$RACE_n)
+table(traffic2$RACE)
+```
+
+
+```{r}
+options(scipen=10000)
+traffic2 %>%  filter(!is.na(Gender_n)) %>%
+ggplot() +
+aes(x = RACE_n , fill = Gender_n) +
+geom_bar(position = 'dodge') +
+scale_fill_discrete(labels = c("Female", "Male")) +
+labs(fill = "Gender", y = "# of stops", x ="Race", title = "Number of Stops by Race and Gender") +
+theme_economist_white()
+
+```
+
+MD estimates are 43 % white, 20% black, 20% hispanic, 16% Asian
+
+```{r}
+43+20+20+16
+```
+
+
+```{r}
+traffic2 %>%  filter(Alcohol == "Yes") %>%  filter(!is.na(Gender_n)) %>%
+ggplot() +
+aes(x =  RACE_n, fill = Gender_n) +
+geom_bar(position = 'dodge')  +
+scale_fill_discrete(labels = c("Female", "Male")) +
+labs(fill = "Gender", y = "# of stops", x ="Race", title = "Number of Stops Involving Alcohol by Race and Gender") +
+theme_economist_white()
+```
+
+
+```{r}
+traffic2 %>%  filter(Contributed_To_Accident == "Yes") %>%  filter(!is.na(Gender_n)) %>%
+ggplot() +
+aes(x =  RACE, fill = Gender_n) +
+geom_bar(position = 'dodge')  +
+scale_fill_discrete(labels = c("Female", "Male")) +
+labs(fill = "Gender", y = "# of stops", x ="Race", title = "Accidents by Race and Gender") +
+theme_economist_white()
+```
+
+
+```{r}
+traffic2 %>%  filter(Contributed_To_Accident == "Yes") %>%  filter(!is.na(Gender_n)) %>% filter(Alcohol == "Yes") %>%
+ggplot() +
+aes(x =  RACE) +
+geom_bar(position = 'dodge')  +
+labs(fill = "Gender", y = "# of stops", x ="Race", title = "Accidents Involving Alcohol") +
+theme_economist_white()
+```
+
+```{r}
+table(traffic2$SubAgency)
+```
+
+
+
+```{r}
+traffic2  %>% filter(!is.na(SubAgency_n)) %>% filter(SubAgency_n!= "Other") %>%
+ggplot() +
+aes(x =  SubAgency_n) +
+geom_bar(position = 'dodge')  +
+labs(y = "# of stops", x ="District", title = "Number of Stops by District") +
+theme_economist()
+```
+
+
+
+```{r}
+traffic2 %>%  filter(Alcohol == "Yes") %>%  filter(SubAgency_n!= "Other") %>%
+ggplot() +
+aes(x =  SubAgency_n) +
+geom_bar(position = 'dodge')  +
+labs(y = "# of stops", x ="District", title = "Number of Stops Involving Alcohol by District") +
+theme_economist()
+```
+
+
+```{r}
+table(traffic2$Color_New)
+```
+
+```{r}
+
+traffic2$Color_n <- traffic2$Color_New
+traffic2$Color_n[traffic2$Color_n == "GRAY"] <- "SILVER"
+traffic2$Color_n[traffic2$Color_n != "GRAY" & traffic2$Color_n != "BLACK" & traffic2$Color_n != "WHITE" & traffic2$Color_n != "BLUE" & traffic2$Color_n != "SILVER" & traffic2$Color_n != "RED"] <- "OTHER"
+
+```
+
+```{r}
+table(traffic2$Color_n)
+```
+
+
+
+```{r}
+traffic2 %>% filter(RACE!="OTHER") %>%
+ggplot()+
+aes(x=Time_Of_Stop, colour=RACE) + geom_bar() + labs(colour= "Race", y = "# of stops", x ="Time", title = "Number of Stops by Time")  + scale_colour_discrete(labels = c("Asian", "Black", "Hispanic", "White")) +
+theme_stata()
+
+```
+
+
+
+```{r}
+#traffic2 %>% 
+#filter(traffic2$RACE != "OTHER") %>%
+
+traffic2 %>% filter(RACE != "OTHER") %>% filter(SubAgency_n != "Other") %>% crosstab(row.vars = "RACE", col.vars = "SubAgency_n", type = "f")
+traffic2 %>% filter(RACE != "OTHER") %>% filter(SubAgency_n != "Other") %>% crosstab(row.vars = "RACE", col.vars = "SubAgency_n", type = "c")
+traffic2 %>% filter(RACE != "OTHER") %>% filter(SubAgency_n != "Other") %>% crosstab(row.vars = "RACE", col.vars = "SubAgency_n", type = "r")
+#crosstab(traffic2, row.vars = "bias_cat", col.vars = "Bias_n", type = "c")
+#crosstab(traffic2, row.vars = "bias_cat", col.vars = "Bias_n", type = "r")
+```
+
+```{r}
+table(traffic2$SubAgency)
+```
+
+
+```{r}
+traffic2 %>%  filter(RACE != "OTHER") %>% filter(SubAgency_n != "Other") %>%
+ggplot() +
+aes(x =  SubAgency_n, fill = RACE) +
+geom_bar(position = 'dodge')  +
+scale_fill_discrete(labels = c("Asian", "Black", "Hispanic", "White")) +
+labs(fill = "Race", y = "# of stops", x ="District", title = "Accidents by Race and Gender") +
+theme_economist_white()
+```
+
+```{r}
+traffic2 %>%  filter(RACE != "OTHER") %>% filter(SubAgency_n != "Other") %>%
+ggplot() +
+aes(x =  RACE, fill = SubAgency_n) +
+geom_bar(position = 'dodge') +
+labs(fill = "District", y = "# of stops", x ="Race", title = "Accidents by Race and Gender") +
+theme_economist_white()
+```
+
+
+```{r}
+table(traffic2$Fatal)
+```
+
+
+```{r}
+
+crosstab(traffic2, row.vars = "Contributed_To_Accident", col.vars = "Alcohol", type = "f")
+crosstab(traffic2, row.vars = "Contributed_To_Accident", col.vars = "Alcohol", type = "c")
+crosstab(traffic2, row.vars = "Contributed_To_Accident", col.vars = "Alcohol", type = "r")
+```
+
+
+```{r}
+table(traffic2$RACE)
+```
+
+```{r}
+table(traffic2$Gender)
+
+```
+
+```{r}
+table(traffic2$Gender_n)
+```
+
+
+```{r}
+table(traffic2$SubAgency)
+table(traffic2$SubAgency_n)
+```
+
+```{r}
+table(traffic2$Color_n)
+```
+
+
+

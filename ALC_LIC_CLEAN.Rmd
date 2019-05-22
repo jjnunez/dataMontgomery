@@ -1,0 +1,172 @@
+---
+title: "Alcohol_License_Violations"
+author: "Juan Nunez"
+date: "April, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Set wroking directory.
+
+```{r}
+setwd("C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone")
+```
+
+Open packages.
+
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tidyr)
+```
+
+Open dataset.
+
+```{r}
+alc <- read_csv("DATASETS\\Alcoholic_Beverage_License_Violations.csv")
+```
+
+
+```{r}
+dim(alc)
+```
+
+Below I separate the address field.
+
+```{r}
+alc1 <- alc
+alc1 <- alc1 %>% separate(FacilityAddress, c("Street", "City", "State_ZIP"), ",", extra = "merge")
+
+alc1 <- separate(data = alc1, col = State_ZIP , into = c("City2", "State_ZIP"), ", ", extra = "drop", fill = "left")
+
+tmp <- paste(alc1$City, alc1$City2)
+tmp <- gsub('NA', '', tmp)
+(alc2 <- cbind(alc1, tmp))
+
+
+head(alc1)
+```
+
+
+
+```{r}
+table(alc1$City)
+```
+
+
+```{r}
+table(alc2$tmp)
+```
+
+
+Below I fix the city variable.
+
+```{r}
+alc1$City <- as.character(alc2$City)
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+alc1$City <- trim(alc1$City)
+alc1$City[alc1$City== "136"] <- "WHEATON"
+alc1$City[alc1$City== "UNIT 100"] <- "ROCKVILLE"
+alc1$City[alc1$City== "D R-6"] <- "POTOMAC"
+alc1$City[alc1$City== "ROCKVILL"] <- "ROCKVILLE"
+
+
+table(alc1$City)
+```
+
+I fix the zip code variable.
+
+```{r}
+alc1$State_ZIP <- trim(alc1$State_ZIP)
+table(alc1$State_ZIP)
+
+```
+
+Remove with city2 variable.
+
+```{r}
+alc1$City2 <- NULL
+```
+
+I separate the ezip and the state.
+
+```{r}
+alc1 <- alc1 %>% separate(State_ZIP, c("State", "ZIP"), " ", extra = "merge")
+
+head(alc1)
+```
+
+Below I fix the zip code.
+
+```{r}
+alc1$ZIP <- trim(alc1$ZIP)
+alc1$State <- trim(alc1$State)
+table(alc1$State)
+table(alc1$ZIP)
+table(alc1$City)
+```
+
+Turn the zip codes into 5 numbers.
+
+```{r}
+alc1 <- alc1 %>% separate(ZIP, c("ZIP", "ZIP2"), "-", extra = "merge")
+```
+
+```{r}
+alc1$ZIP <- trim(alc1$ZIP)
+table(alc1$ZIP)
+```
+
+Remove the column with the extra numbers.
+
+```{r}
+alc1$ZIP2 <- NULL
+```
+
+
+
+```{r}
+head(alc1)
+```
+
+
+```{r}
+alc1$Violation <- as.factor(alc1$Violation)
+levels(alc1$Violation)
+```
+
+```{r}
+class(alc1$Violation)
+```
+
+Below I fix the vilation categories.
+
+```{r}
+
+alc1$viol_cat <- alc1$Violation
+alc1$viol_cat <- recode(alc1$viol_cat, "SALE TO MINOR" = "SALE_TO_MINOR", "ALCOHOL AWARENESS CERTIFIED PERSON NOT ON PREMISES" = "ALC_AWAR_PERS_MISS", .default = "OTHER")
+
+
+table(alc1$viol_cat)
+```
+
+```{r}
+write.csv(alc1, file = "alc1.csv",row.names=FALSE, na="")
+```
+
+```{r}
+table(alc1$Disposition)
+```
+
+
+```{r}
+table(alc1$viol_cat)
+```
+
+

@@ -1,0 +1,449 @@
+---
+title: "Crime"
+author: "Juan Nunez"
+date: "April 1, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+Set working directory.
+
+```{r}
+setwd("C:\\Users\\Juan Nunez\\Desktop\\DATA_Capstone")
+```
+
+Open packages.
+
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tidyr)
+```
+
+
+Opening the crime dataset.
+
+```{r}
+crime <- read_csv("DATASETS\\Crime.csv")
+```
+
+Now let's move to the next dataset.
+
+```{r}
+crime2 <- crime
+```
+
+
+Let's see the top of this dataset.
+
+```{r}
+head(crime2)
+```
+
+Let's add underscores.
+
+```{r}
+colnames(crime2) = gsub(" ", "_",colnames(crime2))
+```
+
+Let's see
+
+```{r}
+head(crime2)
+```
+
+Let's change Dispatch_Date/Time name.
+
+```{r}
+colnames(crime2)[colnames(crime2)=="Dispatch_Date/Time"] <- "Date_and_Time"
+```
+
+Let's see.
+
+```{r}
+head(crime2)
+```
+
+Saving a new dataset.
+
+```{r}
+crime3 <- crime2
+```
+
+```{r}
+head(crime3)
+```
+
+
+Now we create a separate matrix with the dates and times.
+
+```{r}
+library(data.table)
+
+```
+
+We split the date and time variable into tree parts whenever there is a space.
+
+```{r}
+setDT(crime3)[, paste0("Date_and_Time", 1:3) := tstrsplit(Date_and_Time, " ")]
+```
+
+```{r}
+class(crime3)
+```
+
+Turn crime3 into a data frame.
+
+```{r}
+crime3 <- as.data.frame(crime3)
+```
+
+
+```{r}
+head(crime3)
+```
+
+Below I add the PM to time variable.
+
+```{r}
+crime3$Time = paste(crime3$Date_and_Time2, crime3$Date_and_Time3, sep=" ")
+```
+
+Now we have a variable for the time and another for the date.
+
+```{r}
+head(crime3)
+```
+
+I create a date variable.
+
+```{r}
+class(crime3$Date_and_Time1)
+```
+
+```{r}
+colnames(crime3)[colnames(crime3)=="Date_and_Time1"] <- "Date"
+```
+
+
+```{r}
+head(crime3)
+```
+
+Convert to date format.
+
+```{r}
+crime3$Date <- as.Date(crime3$Date, "%m/%d/%Y")
+```
+
+```{r}
+class(crime3$Date)
+```
+
+I add the dataset constant to identify this data in a merge.
+
+```{r}
+crime3['DATNUM']=2
+```
+
+
+```{r}
+head(crime3)
+```
+
+Below I fix the district numbers variable.
+
+```{r}
+table(crime3$Police_District_Number)
+```
+
+```{r}
+crime3$SubAgency_n <- crime3$Police_District_Number
+```
+
+```{r}
+crime3$SubAgency_n[crime3$SubAgency_n== "TPPD"] <- "OTHER"
+crime3$SubAgency_n[crime3$SubAgency_n== "OTHER"] <- "Other"
+table(crime3$SubAgency_n)
+```
+
+```{r}
+head(crime3)
+```
+
+```{r}
+table(crime3$Crime_Name1)
+table(crime3$Crime_Name2)
+```
+
+Below I add a constant for violation type to the whole dataset.
+
+```{r}
+crime3['V_type']=2
+```
+
+Those categories that are considered violent will have a 3.
+
+```{r}
+crime3$V_type[crime3$Crime_Name2== "Aggravated Assault" | crime3$Crime_Name2== "Fondling" | crime3$Crime_Name2== "Forcible Rape" | crime3$Crime_Name2== "Intimidation" | crime3$Crime_Name2== "Kidnapping/Abduction" | crime3$Crime_Name2== "Weapon Law Violations" | crime3$Crime_Name2== "Simple Assault" | crime3$Crime_Name2== "Sexual Assault With An Object"  | crime3$Crime_Name2== "Robbery"  | crime3$Crime_Name2== "Murder and Nonnegligent Manslaughter" | crime3$Crime_Name2== "Forcible Sodomy" | crime3$Crime_Name2== "Forcible Fondling"] <- 3
+
+
+
+```
+
+Those categories that are considered drug-related will have a 4.
+
+```{r}
+crime3$V_type[crime3$Crime_Name2== "Drug Equipment Violations" | crime3$Crime_Name2== "Drug/Narcotic Violations" | crime3$Crime_Name2== "Drunkenness"  ] <- 4
+```
+
+Below are the categories involved.
+
+```{r}
+table(crime3$V_type)
+```
+
+crime4 will be the merge dataset for the map.  It is a subset of crime3
+
+```{r}
+crime4 <- crime3
+```
+
+```{r}
+head(crime4)
+```
+
+
+
+```{r}
+crime4 <- crime4 %>% select(Date, DATNUM, Latitude, Longitude, SubAgency_n, V_type)
+```
+
+```{r}
+table(crime4$V_type)
+```
+
+I save both the full and the subset data to csv to use in Tableau.
+
+```{r}
+write.csv(crime4, file = "crime4.csv",row.names=FALSE, na="")
+```
+
+```{r}
+write.csv(crime3, file = "crime3.csv",row.names=FALSE, na="")
+```
+
+
+```{r}
+class(crime3$Time)
+```
+
+```{r}
+crime3$Time <- strptime(crime3$Time, "%I:%M:%S %p")
+```
+
+```{r}
+head(crime3)
+```
+
+```{r}
+crime3$Time_n <- format(crime3$Time,"%H:%M:%S")
+```
+
+```{r}
+head(crime3)
+```
+
+```{r}
+crime3$V_type_n[crime3$V_type == 2] <- "Other"
+crime3$V_type_n[crime3$V_type == 3] <- "Violent"
+crime3$V_type_n[crime3$V_type == 4] <- "Drugs"
+
+```
+
+```{r}
+head(crime3)
+```
+
+
+```{r}
+crime3$V_type_n <- factor(crime3$V_type_n, levels = c("Drugs", "Violent", "Other"))
+table(crime3$V_type_n)
+table(crime3$V_type)
+```
+
+```{r}
+library(ggthemes)
+```
+
+```{r}
+class(crime3$Time_n)
+```
+
+```{r}
+head(crime3)
+```
+
+
+```{r}
+class(crime3$Time_n)
+```
+
+
+
+```{r}
+library(hms)
+library(lubridate)
+crime3$Time_n <- as.hms(crime3$Time_n)
+```
+
+```{r}
+class(crime3$Time_n)
+```
+
+
+```{r}
+table(crime3$Victims)
+```
+
+```{r}
+class(crime3$Victims)
+```
+
+```{r}
+crime3$Victims_n[crime3$Victims == 1] <- "1"
+crime3$Victims_n[crime3$Victims == 2] <- "2"
+crime3$Victims_n[crime3$Victims > 2] <- ">2"
+table(crime3$Victims_n)
+```
+
+```{r}
+crime3$Victims_n <- factor(crime3$Victims_n, levels = c("1", "2", ">2"))
+table(crime3$Victims_n)
+table(crime3$Victims)
+```
+
+
+```{r}
+table(crime3$Crime_Name1)
+```
+
+```{r}
+crime3$name <- crime3$Crime_Name1
+crime3$name[crime3$name == "Not a Crime"] <- "Other"
+table(crime3$name)
+```
+
+```{r}
+table(crime3$Place)
+```
+
+```{r}
+table(crime3$Zip_Code)
+```
+
+```{r}
+write.csv(crime3, file = "crime3.csv",row.names=FALSE, na="")
+```
+
+```{r}
+crime_n <- crime3
+```
+
+```{r}
+crime3 <- subset(crime3, select=-c(Time))
+```
+
+
+
+```{r}
+#filter(!is.na(Gender_n)) %>%
+crime3 %>%  filter(SubAgency_n != "Other") %>% 
+ggplot() +
+aes(x = SubAgency_n) +
+geom_bar() +
+labs(fill = "Victims", y = "# of arrests", x ="District", title = "Number of Arrests per District") +
+theme_stata()
+```
+
+```{r}
+class(crime3$Victims)
+```
+
+```{r}
+table(crime3$name)
+```
+
+
+```{r}
+crime3 %>%  filter(SubAgency_n != "Other") %>%  filter(!is.na(name)) %>% 
+ggplot() +
+aes(x = SubAgency_n , fill = name) +
+geom_bar() +
+labs( y= "Arrests (#)" , fill = "Crime Type", x ="District", title = "Number of Crimes per District by Type") +
+scale_fill_discrete(labels = c("Person", "Property", "Society", "Other")) +
+theme_stata()
+```
+
+
+```{r}
+north <- 39.36
+south <- 38.92
+west <- -77.55
+east <- -76.88
+```
+
+```{r}
+
+crime3$V_type_s <- crime3$V_type
+crime3$V_type_s[crime3$V_type_s == 2] <- NA
+
+table(crime3$V_type)
+table(crime3$V_type_s)
+```
+
+
+```{r}
+crimeplot <- crime3 %>% filter(Longitude>west,Longitude<east,Latitude<north,Latitude>south) %>% filter(!is.na(V_type_s)) %>%
+ggplot() + 
+geom_point(aes(x = Longitude, y = Latitude, col = as.factor(V_type_s)),alpha = .2, size = .9)+
+labs(title = "Violence and Drugs Map", col = "Crime Type") 
+
+
+print(crimeplot  +scale_colour_manual(labels = c("Violence", "Drugs"), values = c( "Red", "Green")))
+```
+
+
+```{r}
+table(crime3$V_type_n)
+```
+
+
+```{r}
+table(crime3$Victims_n)
+```
+
+
+```{r}
+table(crime3$SubAgency_n)
+```
+
+
+
+```{r}
+table(crime3$name)
+```
+
+
+
+
+
+
+
+```{r}
+crime3 %>% filter()
+```
+
+
